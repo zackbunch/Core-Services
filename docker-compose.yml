@@ -1,0 +1,96 @@
+services:
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: cs-vault
+    profiles: ["vault", "security", "core"]
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8
+    container_name: cs-caddy
+    profiles: ["caddy", "core"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: cs-postgres
+    profiles: ["postgres", "core", "database"]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: cs-keycloak
+    profiles: ["keycloak", "core", "identity"]
+    command: start-dev
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${POSTGRES_DB:-dev}
+      KC_DB_USERNAME: ${POSTGRES_USER:-dev}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      KC_HOSTNAME: https://keycloak.localhost
+      KC_HOSTNAME_ADMIN: https://keycloak.localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cs-mailpit
+    profiles: ["mail", "core", "devtools"]
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    restart: unless-stopped
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: cs-minio
+    profiles: ["minio", "storage", "core"]
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # MinIO web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-developer}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-developer123}
+      MINIO_BROWSER_REDIRECT_URL: https://minio.localhost
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  minio_data:

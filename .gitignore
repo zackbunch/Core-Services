@@ -1,0 +1,15 @@
+.env
+*.env
+!.env.example
+.DS_Store
+
+# Local/editor noise
+.vscode/*.log
+
+# Local certs or exported secrets
+*.crt
+*.key
+*.pem
+
+# Optional bind-mounted data directories
+**/data/

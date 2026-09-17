@@ -1,0 +1,20 @@
+{
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "Caddyfile": "caddyfile",
+    "*.Caddyfile": "caddyfile",
+    "docker-compose.yml": "yaml",
+    "compose.yml": "yaml"
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[caddyfile]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  }
+}
