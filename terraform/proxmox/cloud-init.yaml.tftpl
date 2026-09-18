@@ -1,0 +1,43 @@
+#cloud-config
+${yamlencode({
+  hostname         = hostname
+  manage_etc_hosts = true
+  ssh_pwauth       = false
+  disable_root     = true
+  package_update   = true
+  package_upgrade  = true
+  packages         = ["ca-certificates", "curl", "qemu-guest-agent"]
+  users = [{
+    name                = username
+    shell               = "/bin/bash"
+    groups              = ["sudo"]
+    sudo                = ["ALL=(ALL) NOPASSWD:ALL"]
+    lock_passwd         = true
+    ssh_authorized_keys = ssh_public_keys
+  }]
+  write_files = [{
+    path        = "/usr/local/sbin/bootstrap-docker"
+    owner       = "root:root"
+    permissions = "0755"
+    content     = <<-SCRIPT
+      #!/usr/bin/env bash
+      set -euo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      install -m 0755 -d /etc/apt/keyrings
+      curl --fail --silent --show-error --location --retry 5 --connect-timeout 10 --max-time 120 \
+        https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      . /etc/os-release
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" \
+        > /etc/apt/sources.list.d/docker.list
+      apt-get update
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      systemctl enable --now docker
+    SCRIPT
+  }]
+  runcmd = [
+    ["systemctl", "enable", "--now", "qemu-guest-agent"],
+    ["/usr/local/sbin/bootstrap-docker"]
+  ]
+  final_message = "CoreServices VM bootstrap finished. Check cloud-init status before deploying services."
+})}
