@@ -14,6 +14,18 @@ endpoint/node, storage/network settings, and SSH public key before deployment.
 It provisions the VM only; it does not migrate this stack or make the development
 credentials/Vault configuration production-ready. See the linked deployment guide.
 
+After provisioning, use the separate [VM Compose deployment](deploy/vm/README.md):
+
+```bash
+./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env --check
+./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env
+```
+
+Populate the VM-specific env file and DNS first. This configuration exposes only
+Caddy, requires explicit credentials, and uses persistent single-node Vault Raft.
+It does not migrate local volumes or initialize/unseal Vault. The local stack below
+remains unchanged.
+
 ## Services
 
 | Service | URL | Notes |

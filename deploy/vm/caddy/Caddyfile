@@ -1,0 +1,26 @@
+# Internal CA: explicitly trust its public root certificate on client machines.
+# Restrict this development stack to LAN/VPN users. Mailpit has no UI login.
+keycloak.{$CORE_DOMAIN} {
+	tls internal
+	reverse_proxy keycloak:8080
+}
+
+vault.{$CORE_DOMAIN} {
+	tls internal
+	reverse_proxy vault:8200
+}
+
+mailpit.{$CORE_DOMAIN} {
+	tls internal
+	reverse_proxy mailpit:8025
+}
+
+minio.{$CORE_DOMAIN} {
+	tls internal
+	reverse_proxy minio:9001
+}
+
+s3.{$CORE_DOMAIN} {
+	tls internal
+	reverse_proxy minio:9000
+}

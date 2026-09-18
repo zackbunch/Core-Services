@@ -1,0 +1,91 @@
+# Standalone VM stack: do not merge with the local docker-compose.yml.
+name: coreservices-vm
+
+services:
+  caddy:
+    image: caddy:2.8
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CORE_DOMAIN: ${CORE_DOMAIN:?Set CORE_DOMAIN to your internal DNS suffix}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_DB: keycloak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: ["start"]
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      KC_HOSTNAME: https://keycloak.${CORE_DOMAIN:?Set CORE_DOMAIN}
+      KC_HOSTNAME_ADMIN: https://keycloak.${CORE_DOMAIN:?Set CORE_DOMAIN}
+      KC_HOSTNAME_STRICT: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  vault:
+    image: hashicorp/vault:1.17
+    # The official image entrypoint already loads /vault/config. Passing the
+    # same file again would load its listener twice and fail to bind.
+    command: ["server"]
+    environment:
+      # Raft is configured without mlock; do not request IPC_LOCK file capabilities.
+      SKIP_SETCAP: "true"
+      VAULT_ADDR: http://127.0.0.1:8200
+      VAULT_API_ADDR: https://vault.${CORE_DOMAIN:?Set CORE_DOMAIN}
+    volumes:
+      - ./vault/server.hcl:/vault/config/server.hcl:ro
+      - vault_data:/vault/data
+    restart: unless-stopped
+
+  mailpit:
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:latest}
+    restart: unless-stopped
+    # SMTP is available to stack containers at mailpit:1025, not to the LAN.
+
+  minio:
+    image: ${MINIO_IMAGE:-quay.io/minio/minio:latest}
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: https://minio.${CORE_DOMAIN:?Set CORE_DOMAIN}
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  vault_data:
+  minio_data:
