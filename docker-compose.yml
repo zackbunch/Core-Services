@@ -89,8 +89,17 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  nexus:
+    image: sonatype/nexus3:latest
+    profiles: ["nexus", "devtools", "core"]
+    volumes:
+      - nexus_data:/nexus-data
+    stop_grace_period: 2m
+    restart: unless-stopped
+  
 volumes:
   caddy_data:
   caddy_config:
   postgres_data:
   minio_data:
+  nexus_data:
