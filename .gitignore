@@ -13,14 +13,3 @@
 
 # Optional bind-mounted data directories
 **/data/
-
-# Terraform runtime data and deployment-specific inputs (may contain secrets)
-**/.terraform/
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.tfvars
-*.tfvars.json
-crash.log
-crash.*.log
-# Keep provider lock files and *.tfvars.example templates tracked.

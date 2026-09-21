@@ -4,17 +4,11 @@ Local development infrastructure using Docker Compose.
 
 > This stack is intended for local development only. Do not use these defaults for production.
 
-## Proxmox development VM
+## Development VM
 
-Terraform configuration in [`terraform/proxmox`](terraform/proxmox/README.md)
-provisions Ubuntu Server 24.04 LTS with **4 vCPU, 8 GiB RAM, an 80 GiB disk**,
-SSH public-key access, Docker Engine, and the Compose plugin. Supply your Proxmox
-endpoint/node, storage/network settings, and SSH public key before deployment.
-
-It provisions the VM only; it does not migrate this stack or make the development
-credentials/Vault configuration production-ready. See the linked deployment guide.
-
-After provisioning, use the separate [VM Compose deployment](deploy/vm/README.md):
+Prepare an Ubuntu Server 24.04 LTS VM with SSH public-key access, Docker Engine,
+and the Compose plugin, then follow the [VM Compose deployment](deploy/vm/README.md).
+VM provisioning is managed separately from this project.
 
 ```bash
 ./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env --check

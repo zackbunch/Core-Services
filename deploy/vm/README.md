@@ -8,11 +8,12 @@ inside that network; there is no LAN SMTP port by default.
 
 ## Before deploying
 
-1. Provision the [Proxmox VM](../../terraform/proxmox/README.md) and wait for
-   `sudo cloud-init status --wait`. Confirm `sudo docker compose version` works.
+1. Prepare an Ubuntu Server 24.04 LTS VM and install Docker Engine and the Compose
+   plugin. Confirm `sudo docker compose version` works. VM provisioning is managed
+   separately from this project.
 2. Set up an SSH alias, e.g. `coreservices`, and verify its host key. Deployment
    uses noninteractive SSH and passwordless `sudo`; it does not disable host-key
-   checking or request passwords. The Terraform-created `admin` user supports sudo.
+   checking or request passwords. Configure the deployment user for passwordless sudo.
 3. Restrict the VM to a trusted LAN/VPN/VLAN. Permit SSH only from administrators,
    and HTTPS/HTTP only from intended users. This module installs no firewall rules.
    Mailpit's web UI has **no authentication**: do not expose this stack publicly.
@@ -55,8 +56,8 @@ long-lived environment and review security updates before workplace use.
 ## Check, then deploy
 
 Requires local Bash, SSH/scp, tar and Docker Compose v2.20+ (or v5); the VM needs
-Docker Compose, Bash, `flock` and noninteractive sudo. The supplied cloud-init
-installs the guest's required Docker tooling.
+Docker Compose, Bash, `flock` and noninteractive sudo. Install these prerequisites
+on the VM before deploying.
 
 ```bash
 ./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env --check
@@ -70,8 +71,8 @@ SSH to a private staging directory and removes it afterward.
 A deployment:
 
 - Transfers only the VM Compose/Caddy/Vault configuration, selected env file and
-  remote deployment helper. It never uploads local volumes, Git, Terraform state,
-  or the root project's `.env`.
+  remote deployment helper. It never uploads local volumes, Git, or the root
+  project's `.env`.
 - Uses mode-0700 staging/release directories and mode-0600 env files.
 - Serializes deployments with a remote lock.
 - Creates `/opt/coreservices/releases/<release>` as root, validates configuration,
