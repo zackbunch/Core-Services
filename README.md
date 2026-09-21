@@ -4,22 +4,6 @@ Local development infrastructure using Docker Compose.
 
 > This stack is intended for local development only. Do not use these defaults for production.
 
-## Development VM
-
-Prepare an Ubuntu Server 24.04 LTS VM with SSH public-key access, Docker Engine,
-and the Compose plugin, then follow the [VM Compose deployment](deploy/vm/README.md).
-VM provisioning is managed separately from this project.
-
-```bash
-./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env --check
-./scripts/deploy-vm.sh coreservices --env-file deploy/vm/.env
-```
-
-Populate the VM-specific env file and DNS first. This configuration exposes only
-Caddy, requires explicit credentials, and uses persistent single-node Vault Raft.
-It does not migrate local volumes or initialize/unseal Vault. The local stack below
-remains unchanged.
-
 ## Services
 
 | Service | URL | Notes |
