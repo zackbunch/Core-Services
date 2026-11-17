@@ -11,5 +11,13 @@
 *.key
 *.pem
 
+# Terraform local state, credentials, and provider cache
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+
 # Optional bind-mounted data directories
 **/data/

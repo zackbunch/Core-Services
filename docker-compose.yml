@@ -17,8 +17,13 @@ services:
     container_name: cs-caddy
     profiles: ["caddy", "core"]
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    networks:
+      default:
+        aliases:
+          - gitlab.localhost
+          - gitlab.ci.internal
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -38,6 +43,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cs-pgadmin
+    profiles: ["core", "database", "admin"]
+    ports:
+      - "8081:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-zackbunch96@gmail.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
@@ -89,6 +110,34 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  gitlab:
+    image: gitlab/gitlab-ce:19.5.6-ce.0
+    platform: linux/amd64
+    container_name: cs-gitlab
+    profiles: ["gitlab"]
+    hostname: gitlab
+    shm_size: 256m
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.localhost'
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        prometheus_monitoring['enable'] = false
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+    restart: unless-stopped
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:alpine-v19.5.3
+    container_name: cs-gitlab-runner
+    profiles: ["gitlab"]
+    volumes:
+      - gitlab_runner_config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
   nexus:
     image: sonatype/nexus3:latest
     profiles: ["nexus", "devtools", "core"]
@@ -101,5 +150,10 @@ volumes:
   caddy_data:
   caddy_config:
   postgres_data:
+  pgadmin_data:
   minio_data:
   nexus_data:
+  gitlab_config:
+  gitlab_logs:
+  gitlab_data:
+  gitlab_runner_config:

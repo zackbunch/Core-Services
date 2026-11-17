@@ -1,0 +1,15 @@
+groups = {
+  platform = {
+    name = "Platform Engineering"
+    path = "platform-engineering"
+    # parent_id = 123 # Optional: place this group under an existing group.
+  }
+}
+
+subgroups = {
+  dso = {
+    name       = "DSO"
+    path       = "dso"
+    parent_key = "platform"
+  }
+}

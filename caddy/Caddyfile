@@ -1,3 +1,8 @@
+gitlab.localhost, gitlab.ci.internal {
+  tls internal
+  reverse_proxy gitlab:80
+}
+
 vault.localhost {
   reverse_proxy vault:8200
 }

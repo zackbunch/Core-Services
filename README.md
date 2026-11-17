@@ -34,6 +34,24 @@ Stop and delete named volumes/data:
 docker compose --profile core down -v
 ```
 
+## Local GitLab lab
+
+GitLab CE and a runner container are available separately from the `core` profile:
+
+```bash
+docker compose --profile gitlab --profile caddy up -d caddy gitlab gitlab-runner
+```
+
+Open https://gitlab.localhost after GitLab finishes initializing. Caddy uses its local CA; trust the CA in your browser/OS using your normal certificate trust process. Caddy's HTTP and HTTPS ports are bound to localhost, including for the existing services. Retrieve the temporary initial root password locally with `docker compose exec gitlab grep 'Password:' /etc/gitlab/initial_root_password`; do not share it. GitLab removes this file after initial setup. Use HTTPS for Git; SSH is not exposed.
+
+A project-scoped runner is registered to `root/pvaams-ci-sandbox`. Its Docker executor uses the Compose network, Caddy's local CA, and `https://gitlab.ci.internal` for job clones because `.localhost` resolves to the job container itself. The registration and runner configuration persist in the `gitlab_runner_config` volume; never commit runner tokens. The runner has access to the Docker socket so it can create job containers; compromise of the runner can give control of the Docker daemon and its containers. Use only trusted local test projects, not untrusted merge requests or production secrets.
+
+GitLab runs as amd64 under emulation on Apple Silicon. Startup may take several minutes and Docker's 8 GiB memory allocation may be insufficient, especially during jobs. Data is stored in named volumes. Stop only these services with `docker compose --profile gitlab --profile caddy stop gitlab-runner gitlab caddy`; stopping Caddy also affects other CoreServices routes. Avoid `down -v` unless intentionally deleting all selected persistent data.
+
+## GitLab infrastructure as code
+
+Terraform configuration for managing GitLab groups is in [`terraform/gitlab`](terraform/gitlab/README.md). It supports the local GitLab lab and other GitLab instances.
+
 ## Environment
 
 The compose file has local-dev defaults built in. To override them:
